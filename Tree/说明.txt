@@ -1,0 +1,16 @@
+我是参照（身未动、心已远）此博主做的 只是在基础上加入增删改 
+https://www.cnblogs.com/yonex/p/3379362.html(文章地址)
+
+首先创建解决方案 在解决方案下创建BLL， COMMON ，DAL， MODEL 四个c#类库(.dll)文件  把自带的cs文件删掉换成git库里对应的文件
+ 再创建一个asp.net web文件 模板选择mvc 新建控制器>TreeGo 新建View >index 把代码替换
+在mvc文件中的web.config文件中加入数据库连接字符串 加入到<configuration>标签下 具体内容按实际修改
+<connectionStrings>
+    <add name="connStr" connectionString="server=.;uid=sa;pwd=123456;database=Tree"></add>
+  </connectionStrings>
+
+数据库创建代码在文件夹中自己翻翻
+
+别忘记引用
+
+第一次在github上传东西 甚至都不知道是不是这样传的 如果闹笑话那就当笑话看吧 
+祝你开心

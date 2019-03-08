@@ -1,0 +1,248 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <link href="~/themes/default/easyui.css" rel="stylesheet" />
+    <link href="~/themes/icon.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.7.2.min.js"></script>
+    <script src="~/Scripts/jquery.easyui.min.js"></script>
+    <script src="~/Scripts/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript">
+        var _id;
+        var scoreupdate;
+        $(function () {
+            tree();
+            $("#updateDiv").css("display", "none");
+            $("#addDiv").css("display", "none");
+            $("#btn1").click(function () {
+                var score = $('#scoreview').text();
+                alert("分数为："+score);
+            });
+            $("#btn2").click(function () {
+                Father();
+            });
+        });
+
+        function Father() {
+            $.ajax({
+                url: "/TreeGo/Father",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({ id: 0 }),
+                success: function (data) {
+                    tree();
+                }
+            });
+        }
+
+        function tree()
+        {
+            $('#tree').tree({
+                //url: '@(Url.Content("~/Content/tree.json"))',
+                url: '/TreeGo/JsonTreeTest',
+                method: 'get',
+                checkbox: true,
+                onlyLeafCheck:true,
+                onContextMenu: function (e, node) {
+                    e.preventDefault();
+                    // select the node
+                    _id = $(node).attr("id");
+                    scoreupdate = node.attributes.score;
+                    $('#tree').tree('select', node.target);
+                    node = node.target;
+                    // display context menu
+                    $('#mm').menu('show', {
+                        left: e.pageX,
+                        top: e.pageY
+                    });
+                },
+                onCheck: function (node, checked) {
+                    var score = node.attributes.score;
+                    score = Number(score);
+                    if ($(node).attr("checked") == false) {
+                        $("#scoreview").text(Number($("#scoreview").text()) - score);
+                    } else {
+                        $("#scoreview").text(Number($("#scoreview").text()) + score);
+                    }
+                    
+                }
+            });
+        }
+
+
+
+
+        function update() {
+            $("#updateDiv").css("display", "block");
+            $.post("/TreeGo/GetTree", { "id": _id }, function (data) {
+                //$("#title1").text(data.Title);
+                $("#updataid").val(data.id);
+                $("#idvi").text(data.id);
+                $("#updatatitle").val(data.text);
+                $("#updatascore").val(scoreupdate);
+            });
+            $('#updateDiv').dialog({
+                modal: true,
+                resizable: true,
+                maximizable: true,
+                collapsible: true,
+                title: "修改",
+                width: 250,
+                height: 180,
+                buttons: [{
+                    text: '确定',
+                    iconCls: 'icon-ok',
+                    handler: function () {
+                        //var a = $("#form1").submit();
+                        if ($('#updatatitle').val() == "") {
+                            alert("不允许内容为空");
+                        } else {
+                            $.ajax({
+                                url: "/TreeGo/Updata",
+                                type: "POST",
+                                dataType: "json",
+                                contentType: "application/json",
+                                data: JSON.stringify({ id: $('#updataid').val(), text: $('#updatatitle').val(), score: $('#updatascore').val() }),
+                                success: function (data) {
+                                    tree();
+                                    $('#updateDiv').dialog('close');
+                                }
+                            });
+                        }
+                        
+                       // alert(a);
+                    }
+                }, {
+                    text: '取消',
+                    handler: function () {
+                        $('#updateDiv').dialog('close');
+                    }
+                }]
+            });
+
+        }
+
+        function afterUpdata() {
+
+            $('#updateDiv').dialog('close');
+            tree();
+        }
+
+        function append() {
+            $("#addDiv").css("display", "block");
+            $.post("/TreeGo/GetTree", { "id": _id }, function (data) {
+                //$("#title1").text(data.Title);
+                //$("#addid").val(data.id);
+                $("#addid").val(data.id);
+            });
+            $('#addDiv').dialog({
+                modal: true,
+                resizable: true,
+                maximizable: true,
+                collapsible: true,
+                title: "增加",
+                width: 250,
+                height: 180,
+                buttons: [{
+                    text: '确定',
+                    iconCls: 'icon-ok',
+                    handler: function () {
+                        if ($('#addtitle').val() == "") {
+                            alert("不允许内容为空");
+                        }
+                        else{
+                            $.ajax({
+                                url: "/TreeGo/Add",
+                                type: "POST",
+                                dataType: "json",
+                                contentType: "application/json",
+                                data: JSON.stringify({ id: $('#addid').val(), text: $('#addtitle').val(), score: $('#addscore').val() }),
+                                success: function (data) {
+                                    tree();
+                                    $('#addDiv').dialog('close');
+                                    $("#addtitle").val("");
+                                    $("#addscore").val("");
+                                }
+                            });
+                        }
+                    }
+                }, {
+                    text: '取消',
+                    handler: function () {
+                        $('#addDiv').dialog('close');
+                    }
+                }]
+            });
+        }
+
+        function remove() {
+            $.messager.confirm(
+                "提示",
+                "确定要删除吗?",
+                function(r) {
+                    if (r) {
+                        $.ajax({
+                            url: "/TreeGo/Delete",
+                            type: "POST",
+                            dataType: "json",
+                            contentType: "application/json",
+                            data: JSON.stringify({ id: _id }),
+                            success: function (data) {
+                                tree();
+                            }
+                        });
+                    }
+                     
+                });
+
+        }
+
+
+    </script>
+
+</head>
+<body>
+    <a href="#" class="easyui-linkbutton" id="btn1">计算分数</a>
+    <a href="#" class="easyui-linkbutton" id="btn2">增加祖节点</a>
+    <h6 id="scoreview" style="display:none">0</h6>
+    <ul id="tree" class="easyui-tree"></ul>
+
+    <div id="mm" class="easyui-menu" style="width:120px;">
+        <div onclick="update()" data-options="iconCls:'icon-update'">修改</div>
+        <div onclick="append()" data-options="iconCls:'icon-add'">增加</div>
+        <div onclick="remove()" data-options="iconCls:'icon-remove'">删除</div>
+    </div>
+
+    <div id="updateDiv">
+        @using (Ajax.BeginForm("Updata", "TreeGo", new AjaxOptions() { HttpMethod = "post", OnSuccess = "afterUpdata" }, new { id = "form1" }))
+        {
+            <table>
+                <tr><td>id</td><td><span id="idvi"></span><input id="updataid" name="id" value="text" style="display:none" /></td></tr>
+                <tr><td>内容</td><td><input type="text" name="text" value="text" id="updatatitle" /></td></tr>
+                <tr><td>分数</td><td><input type="text" name="score" value="text" id="updatascore" /></td></tr>
+            </table>
+
+        }
+    </div>
+
+    <div id="addDiv">
+        @using (Ajax.BeginForm("Add", "TreeGo", new AjaxOptions() { HttpMethod = "post", OnSuccess = "afterUpdata" }, new { id = "form2" }))
+        {
+            <table>
+                <tr><td><input id="addid" name="id" value="text" style="display:none" /></td></tr>
+                <tr><td>内容</td><td><input type="text" name="text" id="addtitle" /></td></tr>
+                <tr><td>分数</td><td><input type="text" name="score" id="addscore" /></td></tr>
+            </table>
+        }
+    </div>
+
+</body>
+</html>
